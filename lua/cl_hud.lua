@@ -1,13 +1,123 @@
 --DarkRP Experience Augmentation Module
 
+local fn = function() end
+
 augment = {
 	Add = function(self, cmd, func)
 		self.Command[cmd] = func
 		if not self.State[cmd] then self.State[cmd] = false end
 	end, 
 	Command = {},
-	State = (augment and augment.State or {})
+	State = (augment and augment.State or {}),
+	Scoreboard = {
+		Open = function(self)
+			local ScrW, ScrH, scrollbar, tiles, info = ScrW(), ScrH(), nil, 0
+			local w, h, scroll = ScrW / 2.4, ScrH / 1.2, function(self, dlta)
+				return scrollbar:AddScroll( dlta * -2 )
+			end
+			
+			self.Frame = vgui.Create("DPanel")
+			self.Frame:SetSize(w, h)
+			self.Frame:MakePopup()
+			self.Frame:Center()
+			self.Frame:SetKeyboardInputEnabled(false)
+			self.Frame.OnRemove = function()
+				info:Remove()
+			end
+			self.Frame.OnMouseWheeled = scroll
+			
+			info = vgui.Create("DPanel")
+			local x, y = self.Frame:GetPos()
+			info:SetPos(x - 16, y - 32)
+			info:SetSize(w + 32, 64)
+			info.Paint = function() 
+				draw.DrawText("DarkRP Experience Augmentation Module", "DermaLarge", 0, 0, Color(255, 255, 255))
+				draw.DrawText(GetHostName(), "Trebuchet24", 24, 32, Color(255, 255, 255))
+				draw.DrawText("coded by Saana", "CenterPrintText", 506, 12, Color(200, 200, 200, 150))
+				draw.DrawText(#player.GetAll() .. "/" .. game.MaxPlayers(), "DermaLarge", w + 8, 2, Color(255, 255, 255), TEXT_ALIGN_RIGHT)
+				draw.DrawText("PING : " .. LocalPlayer():Ping(), "DermaDefaultBold", w + 6, 38, Color(255, 255, 255), TEXT_ALIGN_RIGHT)
+			end
+			
+			local canvasframe = vgui.Create("DPanel", self.Frame)
+			canvasframe:SetSize(w - 128, h - 64)
+			canvasframe:SetPos(64, 32)	
+			canvasframe.Paint = fn
+			
+			local canvas = vgui.Create("DPanel", canvasframe)
+			canvas:SetSize(w - 128, (tiles * 44) - 4)
+			canvas.Paint = fn
+			canvas.OnMouseWheeled = scroll
+			
+			self.Frame.Paint = function(frame)
+				draw.RoundedBox(8, 0, 0, w, h, Color(0, 0, 0, 80))
+				
+				for index in pairs(team.GetAllTeams()) do
+					for k, ply in pairs(team.GetPlayers(index)) do
+						if not scrollbar then
+							local tile = vgui.Create("DButton", canvas)
+							tile:SetPos(0, tiles * 44)
+							tile:SetSize(w - 128, 40)
+							tile:SetText("")
+							tile.OnMouseWheeled = scroll
+							tile.Paint = function()
+								draw.RoundedBox(8, 0, 0, w - 128, 40, ColorAlpha(team.GetColor(index), 200))
+
+								draw.DrawText(ply:Nick(), "Trebuchet24", 6, 0, Color(255, 255, 255))
+								
+								surface.SetTextPos(12, 6)
+								
+								surface.SetTextColor(255, 255, 255, 0)
+								surface.SetFont("Trebuchet24")
+								surface.DrawText(ply:Nick())
+								
+								surface.SetTextColor(200, 200, 200, 150)
+								surface.SetFont("CenterPrintText")
+								surface.DrawText(ply:GetUserGroup() == "user" and "" or ply:GetUserGroup():upper())
+								
+								draw.DrawText(team.GetName(index), "CenterPrintText", 7, 22, Color(255, 255, 255))
+							end
+							
+							tiles = tiles + 1
+							canvas:SetSize(w, tiles * 44)
+						end
+					end
+				end
+				
+				if not scrollbar then								
+					scrollbar = vgui.Create("DVScrollBar", frame) 
+					scrollbar:SetSize(24, h - 20) 
+					scrollbar:SetPos(64 + (w - 124), 8)
+					scrollbar:SetUp(h - 64, tiles * 44)
+					
+					local temp = scrollbar:GetChildren()
+					temp[1].Paint = fn
+					temp[2].Paint = fn
+					temp[3]:GetParent().Paint = fn
+					temp[3].Paint = function(self)
+						local w, h = self:GetSize()
+						draw.RoundedBox(4, 0, 0, w, h, Color(255, 255, 255, 80))
+					end
+				else
+					canvas:SetPos(0, scrollbar:GetOffset())
+				end
+			end
+		end,
+		
+		Close = function(self)
+			self.Frame:Remove()
+		end,
+	}
 } 
+
+hook.Add("PlayerBindPress", "augment.Scoreboard", function(ply, bind, pressed)
+	if bind == "+showscores" and pressed then
+		augment.Scoreboard:Open()
+		return true
+	elseif bind == "+showscores" and not pressed then
+		augment.Scoreboard:Close()
+		return true	
+	end
+end)
 
 local frame = vgui.Create("DFrame")
 frame:SetPos(64, 64)
@@ -205,3 +315,9 @@ augment:Add("Weapons", function()
 		hook.Remove("HUDPaint", "augment.Weapons")
 	end
 end)
+
+-- Removing regular errors and effects that ruin gameplay
+local mt = FindMetaTable('Entity')
+mt.ManipulateBoneAngles = fn
+mt.ManipulateBoneScale = fn
+mt.ManipulateBonePosition = fn
