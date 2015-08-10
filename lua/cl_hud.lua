@@ -352,3 +352,8 @@ local mt = FindMetaTable('Entity')
 mt.ManipulateBoneAngles = fn
 mt.ManipulateBoneScale = fn
 mt.ManipulateBonePosition = fn
+
+concommand.Add("180up", function(ply)
+	local angles = ply:EyeAngles()
+	ply:SetEyeAngles(Angle(angles.x - 50, angles.y + -195, angles.z))
+end)
