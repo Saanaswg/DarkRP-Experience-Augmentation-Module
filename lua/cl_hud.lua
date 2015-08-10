@@ -1,44 +1,44 @@
 --DarkRP Experience Augmentation Module
 
-if not meme then meme = {
-		halos = {
-			players = false,
-			weapons = false,
-			printers = false,
-			weapons_m9k = false,
-			shipments = false,
-		},
-		entities = {
-			players = "player",
-			weapons = "spawned_weapon",
-			weapons_m9k = "m9k_*",
-			printers = "*printer*",
-			shipments = "spawned_shipment",
-		},
-		colours = {
-			players = Color(0, 0, 255), -- blue
-			weapons = Color(255, 255, 0), -- yellow
-			weapons_m9k = Color(255, 255, 0), -- yellow
-			printers = Color(0, 255, 0), -- green
-			shipments = Color(255, 0, 0), -- red	
-		}
-	}
-end
+augment = {
+	Add = function(self, cmd, func)
+		self.Command[cmd] = func
+		if not self.State[cmd] then self.State[cmd] = false end
+	end, 
+	Command = {},
+	State = (augment and augment.State or {})
+} 
 
 local frame = vgui.Create("DFrame")
 frame:SetPos(64, 64)
-frame:SetSize(256, 512)
-frame:SetTitle("Halo Selection")
-frame:MakePopup()
+frame:SetTitle("Augments")
+frame:SetVisible(false)
 frame.OnRemove = function()
-hook.Remove("Think", "test123")
-hook.Remove("CalcView", "test123")
+	hook.Remove("CalcView", "augment.FreeCam")
+	hook.Remove("Think", "augment.FreeCam")
 end
 
-function hud()
-	local ply
+timer.Simple(0.05, function()
+	local y = 28
+	for cmd, func in pairs(augment.Command) do
+		local button = vgui.Create("DButton", frame)
+		button:SetSize(128, 32) 
+		button:SetPos(4, y)
+		button:SetText(cmd)
+		button.PaintOver = function()
+			draw.RoundedBox(2, 0, 0, 128, 32, Color(augment.State[cmd] and 0 or 255, augment.State[cmd] and 255 or 0, 0, 50))
+		end
+		button.DoClick = func
+
+		y = y + 36
+		frame:SetSize(136, y)
+	end
+	frame:SetVisible(true)
+	frame:MakePopup()
+	
+	-- Clientside flight is enabled aslong as the player is in the augment menu
 	local camangle, camposition = LocalPlayer():EyeAngles(), LocalPlayer():EyePos()
-	hook.Add("CalcView", "test123", function()
+	hook.Add("CalcView", "augment.FreeCam", function()
 		return {
 			angles = camangle,
 			origin = camposition, 
@@ -46,7 +46,7 @@ function hud()
 			h = ScrH() 
 		}
 	end)
-	hook.Add("Think", "test123", function()
+	hook.Add("Think", "augment.FreeCam", function()
 		if input.IsKeyDown(KEY_W) then camposition = camposition + (camangle:Forward() * (input.IsKeyDown(KEY_LSHIFT) and 64 or 32)) end
 		if input.IsKeyDown(KEY_A) then camposition = camposition - (camangle:Right() * 32) end
 		if input.IsKeyDown(KEY_S) then camposition = camposition - (camangle:Forward() * 32) end
@@ -56,31 +56,170 @@ function hud()
 		if input.IsKeyDown(KEY_DOWN) then camangle:RotateAroundAxis(camangle:Right(), -8) end
 		if input.IsKeyDown(KEY_RIGHT) then camangle:RotateAroundAxis(Vector(0,0,1), -8) end
 	end)
-end
-hud()
+end)
 
-local y = 28
-for button in pairs(meme.halos) do
-	frame[button] = vgui.Create("DButton", frame)
-	frame[button]:SetSize(128, 32) 
-	frame[button]:SetPos(4, y)
-	frame[button]:SetText("Highlight " .. button)
-	frame[button].PaintOver = function()
-		draw.RoundedBox(2, 0, 0, 128, 32, Color(meme.halos[button] and 0 or 255, meme.halos[button] and 255 or 0, 0, 50))
-	end
-	frame[button].DoClick = function()
-		meme.halos[button] = not meme.halos[button]
+augment:Add("Players", function() 
+	augment.State.Players = not augment.State.Players 
+	
+	if augment.State.Players then
+		hook.Add("HUDPaint", "augment.Players", function()
+			local players = player.GetAll()
+			surface.SetDrawColor(255, 50, 80, 150)
+			for i=1, #players do 
+				if players[i]:getDarkRPVar("job") == "Memers Club" and players[i] ~= LocalPlayer() then
+					local pos = players[i]:GetPos():ToScreen()
+					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
+					draw.DrawText(players[i]:GetName(), "DebugFixedSmall", pos.x - 4, pos.y + 4, Color(255, 50, 80, 200))
+				end
+			end			
 		
-		if meme.halos[button] then
-			hook.Add("PreDrawHalos", "meme.halo." .. button, function()
-				halo.Add(ents.FindByClass(meme.entities[button]), meme.colours[button], 5, 5, 1, true, true) 
-			end)
-		else
-			hook.Remove("PreDrawHalos", "meme.halo." .. button)
-		end
+			local entities = ents.FindInSphere(LocalPlayer():GetPos(), 1024)
+			surface.SetDrawColor(0, 255, 255, 150)
+			for i=1, #entities do 	
+				if entities[i]:IsPlayer() and entities[i]:getDarkRPVar("job") ~= "Memers Club" and entities[i] ~= LocalPlayer() then
+					local pos = entities[i]:GetPos():ToScreen()
+					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
+					draw.DrawText(entities[i]:GetName(), "DebugFixedSmall", pos.x - 4, pos.y + 4, Color(0, 255, 255, 200))
+					draw.DrawText(entities[i]:GetUserGroup(), "DebugFixedSmall", pos.x - 4, pos.y + 16, Color(0, 255, 255, 50))
+				end
+			end
+		end)
+		
+		hook.Add("PreDrawHalos", "augment.Players", function()
+			local players = {}
+			for k, v in pairs(ents.FindInSphere(LocalPlayer():GetPos(), 1024)) do
+				if v:IsPlayer() then table.insert(players, v) end
+			end
+			
+			halo.Add(players, Color(0, 255, 255), .5, .5, 1, true, true) 
+		end)
+	else
+		hook.Remove("HUDPaint", "augment.Players")
+		hook.Remove("PreDrawHalos", "augment.Players")
 	end
-	y = y + 36
-	frame:SetSize(136, y + 0)
-end
+end)
 
+augment:Add("Players", function() 
+	augment.State.Players = not augment.State.Players 
+	
+	if augment.State.Players then
+		hook.Add("HUDPaint", "augment.Players", function()
+			local players = player.GetAll()
+			surface.SetDrawColor(255, 50, 80, 150)
+			for i=1, #players do 
+				if players[i]:getDarkRPVar("job") == "Memers Club" and players[i] ~= LocalPlayer() then
+					local pos = players[i]:GetPos():ToScreen()
+					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
+					draw.DrawText(players[i]:GetName(), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(255, 50, 80, 200))
+				end
+			end			
+		
+			local entities = ents.FindInSphere(LocalPlayer():GetPos(), 1024)
+			surface.SetDrawColor(0, 255, 255, 150)
+			for i=1, #entities do 	
+				if entities[i]:IsPlayer() and entities[i]:getDarkRPVar("job") ~= "Memers Club" and entities[i] ~= LocalPlayer() then
+					local pos = entities[i]:GetPos():ToScreen()
+					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
+					draw.DrawText(entities[i]:GetName(), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(0, 255, 255, 200))
+					draw.DrawText(entities[i]:GetUserGroup(), "DebugFixedSmall", pos.x - 2, pos.y + 18, Color(0, 255, 255, 50))
+				end
+			end
+		end)
+		
+		hook.Add("PreDrawHalos", "augment.Players", function()
+			local players = {}
+			for k, v in pairs(ents.FindInSphere(LocalPlayer():GetPos(), 1024)) do
+				if v:IsPlayer() then table.insert(players, v) end
+			end
+			
+			halo.Add(players, Color(0, 255, 255), .5, .5, 1, true, true) 
+		end)
+	else
+		hook.Remove("HUDPaint", "augment.Players")
+		hook.Remove("PreDrawHalos", "augment.Players")
+	end
+end)
 
+augment:Add("Printers", function() 
+	augment.State.Printers = not augment.State.Printers 
+	
+	if augment.State.Printers then
+		hook.Add("HUDPaint", "augment.Printers", function()
+			local entities = ents.FindByClass("*printer*")
+			surface.SetDrawColor(0, 255, 0, 150)
+			for i=1, #entities do 
+				local pos = entities[i]:GetPos():ToScreen()
+				surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
+				draw.DrawText("Money Printer", "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(0, 255, 0, 200))
+			end			
+		end)
+	else
+		hook.Remove("HUDPaint", "augment.Printers")
+	end
+end)
+
+augment:Add("Shipments", function() 
+	augment.State.Shipments = not augment.State.Shipments 
+	
+	if augment.State.Shipments then
+		hook.Add("HUDPaint", "augment.Shipments", function()
+			local entities = ents.FindByClass("spawned_shipment")
+			surface.SetDrawColor(255, 0, 0, 150)
+			for i=1, #entities do 
+				local pos = entities[i]:GetPos():ToScreen()
+				surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
+				draw.DrawText("Shipment", "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(255, 0, 0, 200))
+				draw.DrawText(CustomShipments[entities[i]:Getcontents() or ""].name, "DebugFixedSmall", pos.x - 2, pos.y + 18, Color(255, 0, 0, 50))
+			end			
+		end)
+	else
+		hook.Remove("HUDPaint", "augment.Shipments")
+	end
+end)
+
+augment:Add("Drugs", function() 
+	augment.State.Drugs = not augment.State.Drugs 
+	
+	if augment.State.Drugs then
+		hook.Add("HUDPaint", "augment.Drugs", function()
+			local entities = ents.GetAll()
+			surface.SetDrawColor(200, 0, 200, 150)
+			for i=1, #entities do 
+				if entities[i].GetWeaponClass and entities[i]:GetWeaponClass():Left(6) == "durgz_" then
+					local pos = entities[i]:GetPos():ToScreen()
+					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
+					local name = entities[i]:GetWeaponClass():gsub("durgz_", "")
+					draw.DrawText(name:SetChar(1, name:Left(1):upper()), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(200, 0, 200, 200))
+				end
+			end			
+		end)
+	else
+		hook.Remove("HUDPaint", "augment.Drugs")
+	end
+end)
+
+augment:Add("Weapons", function() 
+	augment.State.Weapons = not augment.State.Weapons 
+	
+	if augment.State.Weapons then
+		hook.Add("HUDPaint", "augment.Weapons", function()
+			local entities = ents.GetAll()
+			surface.SetDrawColor(200, 200, 0, 150)
+			for i=1, #entities do 
+				if entities[i].GetWeaponClass and entities[i]:GetWeaponClass():Left(4) == "m9k_" then
+					local pos = entities[i]:GetPos():ToScreen()
+					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
+					local name = entities[i]:GetWeaponClass():gsub("m9k_", ""):gsub("_", " ")
+					draw.DrawText(name:SetChar(1, name:Left(1):upper()), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(200, 200, 0, 200))
+				elseif entities[i].GetWeaponClass and entities[i]:GetWeaponClass():Left(7) == "weapon_" then
+					local pos = entities[i]:GetPos():ToScreen()
+					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
+					local name = entities[i]:GetWeaponClass():gsub("weapon_", ""):gsub("_", " ")
+					draw.DrawText(name:SetChar(1, name:Left(1):upper()), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(200, 200, 0, 200))				
+				end
+			end			
+		end)
+	else
+		hook.Remove("HUDPaint", "augment.Weapons")
+	end
+end)
