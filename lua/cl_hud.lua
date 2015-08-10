@@ -1,6 +1,9 @@
 --DarkRP Experience Augmentation Module
 
-local fn = function() end
+local frame, fn = vgui.Create("DFrame"), function() end
+frame:SetPos(64, 64)
+frame:SetTitle("Augments")
+frame:SetVisible(false)
 
 augment = {
 	Add = function(self, cmd, func)
@@ -15,6 +18,8 @@ augment = {
 			local w, h, scroll = ScrW / 2.4, ScrH / 1.2, function(self, dlta)
 				return scrollbar:AddScroll( dlta * -2 )
 			end
+			
+			frame:SetVisible(true)
 			
 			self.Frame = vgui.Create("DPanel")
 			self.Frame:SetSize(w, h)
@@ -131,6 +136,7 @@ augment = {
 		end,
 		
 		Close = function(self)
+			frame:SetVisible(false)
 			self.Frame:Remove()
 		end,
 	}
@@ -158,55 +164,34 @@ hook.Add("PlayerBindPress", "augment.Scoreboard", function(ply, bind, pressed)
 	end
 end)
 
---if true then return end
-
-local frame = vgui.Create("DFrame")
-frame:SetPos(64, 64)
-frame:SetTitle("Augments")
-frame:SetVisible(false)
-frame.OnRemove = function()
-	hook.Remove("CalcView", "augment.FreeCam")
-	hook.Remove("Think", "augment.FreeCam")
-end
-
-timer.Simple(0.05, function()
-	local y = 28
-	for cmd, func in pairs(augment.Command) do
-		local button = vgui.Create("DButton", frame)
-		button:SetSize(128, 32) 
-		button:SetPos(4, y)
-		button:SetText(cmd)
-		button.PaintOver = function()
-			draw.RoundedBox(2, 0, 0, 128, 32, Color(augment.State[cmd] and 0 or 255, augment.State[cmd] and 255 or 0, 0, 50))
-		end
-		button.DoClick = func
-
-		y = y + 36
-		frame:SetSize(136, y)
-	end
-	frame:SetVisible(true)
-	frame:MakePopup()
+augment:Add("FreeCam", function() 
+	augment.State.FreeCam = not augment.State.FreeCam 
 	
-	-- Clientside flight is enabled aslong as the player is in the augment menu
-	local camangle, camposition = LocalPlayer():EyeAngles(), LocalPlayer():EyePos()
-	hook.Add("CalcView", "augment.FreeCam", function()
-		return {
-			angles = camangle,
-			origin = camposition, 
-			w = ScrW(),
-			h = ScrH() 
-		}
-	end)
-	hook.Add("Think", "augment.FreeCam", function()
-		if input.IsKeyDown(KEY_W) then camposition = camposition + (camangle:Forward() * (input.IsKeyDown(KEY_LSHIFT) and 64 or 32)) end
-		if input.IsKeyDown(KEY_A) then camposition = camposition - (camangle:Right() * 32) end
-		if input.IsKeyDown(KEY_S) then camposition = camposition - (camangle:Forward() * 32) end
-		if input.IsKeyDown(KEY_D) then camposition = camposition + (camangle:Right() * 32) end
-		if input.IsKeyDown(KEY_UP) then camangle:RotateAroundAxis(camangle:Right(), 8)	end
-		if input.IsKeyDown(KEY_LEFT) then camangle:RotateAroundAxis(Vector(0,0,1), 8) end
-		if input.IsKeyDown(KEY_DOWN) then camangle:RotateAroundAxis(camangle:Right(), -8) end
-		if input.IsKeyDown(KEY_RIGHT) then camangle:RotateAroundAxis(Vector(0,0,1), -8) end
-	end)
+	if augment.State.FreeCam then
+		local camangle, camposition = LocalPlayer():EyeAngles(), LocalPlayer():EyePos()
+		hook.Add("CalcView", "augment.FreeCam", function()
+			return {
+				angles = camangle,
+				origin = camposition, 
+				w = ScrW(),
+				h = ScrH() 
+			}
+		end)
+		
+		hook.Add("Think", "augment.FreeCam", function()
+			if input.IsKeyDown(KEY_W) then camposition = camposition + (camangle:Forward() * (input.IsKeyDown(KEY_LSHIFT) and 64 or 32)) end
+			if input.IsKeyDown(KEY_A) then camposition = camposition - (camangle:Right() * 32) end
+			if input.IsKeyDown(KEY_S) then camposition = camposition - (camangle:Forward() * 32) end
+			if input.IsKeyDown(KEY_D) then camposition = camposition + (camangle:Right() * 32) end
+			if input.IsKeyDown(KEY_UP) then camangle:RotateAroundAxis(camangle:Right(), 8)	end
+			if input.IsKeyDown(KEY_LEFT) then camangle:RotateAroundAxis(Vector(0,0,1), 8) end
+			if input.IsKeyDown(KEY_DOWN) then camangle:RotateAroundAxis(camangle:Right(), -8) end
+			if input.IsKeyDown(KEY_RIGHT) then camangle:RotateAroundAxis(Vector(0,0,1), -8) end
+		end)
+	else
+		hook.Remove("CalcView", "augment.FreeCam")
+		hook.Remove("Think", "augment.FreeCam")
+	end
 end)
 
 augment:Add("Players", function() 
@@ -352,6 +337,21 @@ local mt = FindMetaTable('Entity')
 mt.ManipulateBoneAngles = fn
 mt.ManipulateBoneScale = fn
 mt.ManipulateBonePosition = fn
+
+local y = 28
+for cmd, func in pairs(augment.Command) do
+	local button = vgui.Create("DButton", frame)
+	button:SetSize(128, 32) 
+	button:SetPos(4, y)
+	button:SetText(cmd)
+	button.PaintOver = function()
+		draw.RoundedBox(2, 0, 0, 128, 32, Color(augment.State[cmd] and 0 or 255, augment.State[cmd] and 255 or 0, 0, 50))
+	end
+	button.DoClick = func
+	
+	y = y + 36
+	frame:SetSize(136, y)
+end
 
 concommand.Add("180up", function(ply)
 	local angles = ply:EyeAngles()
