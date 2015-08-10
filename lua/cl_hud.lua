@@ -66,7 +66,7 @@ augment:Add("Players", function()
 			local players = player.GetAll()
 			for i=1, #players do 
 				local pos = players[i]:GetPos():ToScreen()
-				if players[i]:getDarkRPVar("job") == "Memers Club" and players[i] ~= LocalPlayer() then
+				if players[i]:GetFriendStatus() == "friend" and players[i] ~= LocalPlayer() then
 					surface.SetDrawColor(255, 50, 80, 150)
 					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
 					draw.DrawText(players[i]:GetName(), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(255, 50, 80, 200))
@@ -79,7 +79,7 @@ augment:Add("Players", function()
 			local entities = ents.FindInSphere(LocalPlayer():GetPos(), 1024)
 			surface.SetDrawColor(0, 255, 255, 75)
 			for i=1, #entities do 	
-				if entities[i]:IsPlayer() and entities[i]:getDarkRPVar("job") ~= "Memers Club" and entities[i] ~= LocalPlayer() then
+				if entities[i]:IsPlayer() and entities[i]:GetFriendStatus() == "friend" and entities[i] ~= LocalPlayer() then
 					local pos = entities[i]:GetPos():ToScreen()
 					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
 					draw.DrawText(entities[i]:GetName(), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(0, 255, 255, 200))
@@ -178,7 +178,7 @@ augment:Add("Weapons", function()
 					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
 					local name = entities[i]:GetWeaponClass():gsub("m9k_", ""):gsub("_", " ")
 					draw.DrawText(name:SetChar(1, name:Left(1):upper()), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(200, 200, 0, 200))
-				elseif entities[i]:GetClass():Left(4) == "m9k_" then
+				elseif entities[i]:GetClass():Left(4) == "m9k_" and not entities[i].Owner then
 					local pos = entities[i]:GetPos():ToScreen()
 					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
 					local name = entities[i]:GetClass():gsub("m9k_", ""):gsub("_", " ")
@@ -188,7 +188,7 @@ augment:Add("Weapons", function()
 					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
 					local name = entities[i]:GetWeaponClass():gsub("weapon_", ""):gsub("_", " ")
 					draw.DrawText(name:SetChar(1, name:Left(1):upper()), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(200, 200, 0, 200))	
-				elseif entities[i]:GetClass():Left(7) == "weapon_" then
+				elseif entities[i]:GetClass():Left(7) == "weapon_"  and not entities[i].Owner then
 					local pos = entities[i]:GetPos():ToScreen()
 					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
 					local name = entities[i]:GetClass():gsub("weapon_", ""):gsub("_", " ")
@@ -200,21 +200,3 @@ augment:Add("Weapons", function()
 		hook.Remove("HUDPaint", "augment.Weapons")
 	end
 end)
-
--- todo list
-
-
--- dont show weapons that the player owns
--- mark players name:text
--- aimbot
--- draw halos make concommand
--- spectate player
--- view noclip
--- modify memes to have boxes not halos
--- override shakes
--- override erroring functionnwith loop in table w func names
--- Toggle groupnames
--- move up/down for noclip
-
--- error removal dump
---lua_run_cl FindMetaTable('Entity').ManipulateBoneAngles = function() end FindMetaTable('Entity').ManipulateBoneScale = function() end FindMetaTable('Entity').ManipulateBonePosition = function() end
