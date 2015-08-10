@@ -1,5 +1,4 @@
 --DarkRP Experience Augmentation Module
---Initial Release v1.0
 
 if not meme then meme = {
 		halos = {
@@ -31,6 +30,34 @@ frame:SetPos(64, 64)
 frame:SetSize(256, 512)
 frame:SetTitle("Halo Selection")
 frame:MakePopup()
+frame.OnRemove = function()
+hook.Remove("Think", "test123")
+hook.Remove("CalcView", "test123")
+end
+
+function hud()
+	local ply
+	local camangle, camposition = LocalPlayer():EyeAngles(), LocalPlayer():EyePos()
+	hook.Add("CalcView", "test123", function()
+		return {
+			angles = camangle,
+			origin = camposition, 
+			w = ScrW(),
+			h = ScrH() 
+		}
+	end)
+	hook.Add("Think", "test123", function()
+		if input.IsKeyDown(KEY_W) then camposition = camposition + (camangle:Forward() * (input.IsKeyDown(KEY_LSHIFT) and 64 or 32)) end
+		if input.IsKeyDown(KEY_A) then camposition = camposition - (camangle:Right() * 32) end
+		if input.IsKeyDown(KEY_S) then camposition = camposition - (camangle:Forward() * 32) end
+		if input.IsKeyDown(KEY_D) then camposition = camposition + (camangle:Right() * 32) end
+		if input.IsKeyDown(KEY_UP) then camangle:RotateAroundAxis(camangle:Right(), 8)	end
+		if input.IsKeyDown(KEY_LEFT) then camangle:RotateAroundAxis(Vector(0,0,1), 8) end
+		if input.IsKeyDown(KEY_DOWN) then camangle:RotateAroundAxis(camangle:Right(), -8) end
+		if input.IsKeyDown(KEY_RIGHT) then camangle:RotateAroundAxis(Vector(0,0,1), -8) end
+	end)
+end
+hud()
 
 local y = 28
 for button in pairs(meme.halos) do
