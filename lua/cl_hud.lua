@@ -12,7 +12,7 @@ augment = {
 	Scoreboard = {
 		Open = function(self)
 			local ScrW, ScrH, scrollbar, tiles, info = ScrW(), ScrH(), nil, 0
-			local w, h, scroll = ScrW / 2.4, ScrH / 1.2, function(self, dlta)
+			local w, h, scroll = ScrW / 2.4, ScrH / 1.2, function(self, dlta)	
 				return scrollbar:AddScroll( dlta * -2 )
 			end
 			
@@ -75,6 +75,29 @@ augment = {
 								surface.DrawText(ply:GetUserGroup() == "user" and "" or ply:GetUserGroup():upper())
 								
 								draw.DrawText(team.GetName(index), "CenterPrintText", 7, 22, Color(255, 255, 255))
+								
+								draw.DrawText("HP : " .. ply:Health(), "DermaDefaultBold", 300, 11, Color(255, 255, 255))
+								
+								local weapons, hasweapons = ply:GetWeapons()
+								local y, col, id = 0, 1, 0
+								
+								for k, v in pairs(weapons) do
+									if v:GetClass():Left(4) == "m9k_" then
+										id = id + 1
+									
+										hasweapons = true
+										local name = v:GetClass():gsub("m9k_", ""):gsub("_", " ")
+										draw.DrawText(name:SetChar(1, name:Left(1):upper()), "DermaDefault", 420 + (64 * col), y + 5, Color(255, 255, 255))	
+										
+										y = ((id - 1) % 2 == 0 and 1 or 0) * 15
+										col = col + (id - 1) % 2
+										
+									end
+								end
+								
+								if hasweapons then 
+									draw.DrawText("Weapons : ", "DermaDefaultBold", 410, 11, Color(255, 255, 255)) 
+								end
 							end
 							
 							tiles = tiles + 1
@@ -298,16 +321,6 @@ augment:Add("Weapons", function()
 					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
 					local name = entities[i]:GetClass():gsub("m9k_", ""):gsub("_", " ")
 					draw.DrawText(name:SetChar(1, name:Left(1):upper()), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(200, 200, 0, 200))
-				elseif entities[i].GetWeaponClass and entities[i]:GetWeaponClass():Left(7) == "weapon_" then
-					local pos = entities[i]:GetPos():ToScreen()
-					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
-					local name = entities[i]:GetWeaponClass():gsub("weapon_", ""):gsub("_", " ")
-					draw.DrawText(name:SetChar(1, name:Left(1):upper()), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(200, 200, 0, 200))	
-				elseif entities[i]:GetClass():Left(7) == "weapon_"  and not entities[i].Owner then
-					local pos = entities[i]:GetPos():ToScreen()
-					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
-					local name = entities[i]:GetClass():gsub("weapon_", ""):gsub("_", " ")
-					draw.DrawText(name:SetChar(1, name:Left(1):upper()), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(200, 200, 0, 200))	
 				end
 			end			
 		end)
@@ -321,3 +334,7 @@ local mt = FindMetaTable('Entity')
 mt.ManipulateBoneAngles = fn
 mt.ManipulateBoneScale = fn
 mt.ManipulateBonePosition = fn
+
+-- notification on when thief is available
+-- Damage markers
+-- inherit drug abilities via usermsg calls
