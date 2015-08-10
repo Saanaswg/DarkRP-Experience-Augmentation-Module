@@ -12,7 +12,7 @@ augment = {
 	Scoreboard = {
 		Open = function(self)
 			local ScrW, ScrH, scrollbar, tiles, info = ScrW(), ScrH(), nil, 0
-			local w, h, scroll = ScrW / 2.4, ScrH / 1.2, function(self, dlta)	
+			local w, h, scroll = ScrW / 2.4, ScrH / 1.2, function(self, dlta)
 				return scrollbar:AddScroll( dlta * -2 )
 			end
 			
@@ -59,16 +59,20 @@ augment = {
 							tile:SetSize(w - 128, 40)
 							tile:SetText("")
 							tile.OnMouseWheeled = scroll
+							tile.DoClick = function()
+								if ply:GetFriendStatus() == "friend" or ply == LocalPlayer() then return end
+								ply.Marked = not ply.Marked
+							end
 							tile.Paint = function()
 								draw.RoundedBox(8, 0, 0, w - 128, 40, ColorAlpha(team.GetColor(index), 200))
 
-								draw.DrawText(ply:Nick(), "Trebuchet24", 6, 0, Color(255, 255, 255))
+								draw.DrawText((ply.Marked and "[MARKED] " or "") .. ply:Nick(), "Trebuchet24", 6, 0, Color(255, 255, 255))
 								
 								surface.SetTextPos(12, 6)
 								
 								surface.SetTextColor(255, 255, 255, 0)
 								surface.SetFont("Trebuchet24")
-								surface.DrawText(ply:Nick())
+								surface.DrawText((ply.Marked and "[MARKED] " or "") .. ply:Nick())
 								
 								surface.SetTextColor(200, 200, 200, 150)
 								surface.SetFont("CenterPrintText")
@@ -97,7 +101,7 @@ augment = {
 								
 								if hasweapons then 
 									draw.DrawText("Weapons : ", "DermaDefaultBold", 410, 11, Color(255, 255, 255)) 
-								end
+								end					
 							end
 							
 							tiles = tiles + 1
@@ -132,6 +136,18 @@ augment = {
 	}
 } 
 
+hook.Add("HUDPaint", "augment.DrawMarkedPlayers", function()
+	local players = player.GetAll()
+	for i=1, #players do 
+		local pos = players[i]:GetPos():ToScreen()
+		if players[i].Marked and players[i] ~= LocalPlayer() then
+			surface.SetDrawColor(255, 165, 0, 150)
+			surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
+			draw.DrawText(players[i]:GetName(), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(255, 165, 0, 200))		
+		end
+	end		
+end)
+
 hook.Add("PlayerBindPress", "augment.Scoreboard", function(ply, bind, pressed)
 	if bind == "+showscores" and pressed then
 		augment.Scoreboard:Open()
@@ -141,6 +157,8 @@ hook.Add("PlayerBindPress", "augment.Scoreboard", function(ply, bind, pressed)
 		return true	
 	end
 end)
+
+--if true then return end
 
 local frame = vgui.Create("DFrame")
 frame:SetPos(64, 64)
@@ -203,7 +221,7 @@ augment:Add("Players", function()
 					surface.SetDrawColor(255, 50, 80, 150)
 					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
 					draw.DrawText(players[i]:GetName(), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(255, 50, 80, 200))
-				else
+				elseif players[i] ~= LocalPlayer() and not players[i].Marked then
 					surface.SetDrawColor(0, 255, 255, 75)
 					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)			
 				end
@@ -212,7 +230,7 @@ augment:Add("Players", function()
 			local entities = ents.FindInSphere(LocalPlayer():GetPos(), 1024)
 			surface.SetDrawColor(0, 255, 255, 75)
 			for i=1, #entities do 	
-				if entities[i]:IsPlayer() and entities[i]:GetFriendStatus() ~= "friend" and entities[i] ~= LocalPlayer() then
+				if entities[i]:IsPlayer() and entities[i]:GetFriendStatus() ~= "friend" and entities[i] ~= LocalPlayer() and not entities[i].Marked then
 					local pos = entities[i]:GetPos():ToScreen()
 					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
 					draw.DrawText(entities[i]:GetName(), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(0, 255, 255, 200))
@@ -334,7 +352,3 @@ local mt = FindMetaTable('Entity')
 mt.ManipulateBoneAngles = fn
 mt.ManipulateBoneScale = fn
 mt.ManipulateBonePosition = fn
-
--- notification on when thief is available
--- Damage markers
--- inherit drug abilities via usermsg calls
