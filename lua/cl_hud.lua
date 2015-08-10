@@ -79,7 +79,7 @@ augment:Add("Players", function()
 			local entities = ents.FindInSphere(LocalPlayer():GetPos(), 1024)
 			surface.SetDrawColor(0, 255, 255, 75)
 			for i=1, #entities do 	
-				if entities[i]:IsPlayer() and entities[i]:GetFriendStatus() == "friend" and entities[i] ~= LocalPlayer() then
+				if entities[i]:IsPlayer() and entities[i]:GetFriendStatus() ~= "friend" and entities[i] ~= LocalPlayer() then
 					local pos = entities[i]:GetPos():ToScreen()
 					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
 					draw.DrawText(entities[i]:GetName(), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(0, 255, 255, 200))
@@ -91,10 +91,15 @@ augment:Add("Players", function()
 		hook.Add("PreDrawHalos", "augment.Players", function()
 			local players = {}
 			for k, v in pairs(ents.FindInSphere(LocalPlayer():GetPos(), 1024)) do
-				if v:IsPlayer() then table.insert(players, v) end
+				if v:IsPlayer() and v:GetFriendStatus() ~= "friend" then table.insert(players, v) end
 			end
-			
 			halo.Add(players, Color(0, 255, 255), .5, .5, 1, true, true) 
+			
+			local friends = {}
+			for k, v in pairs(ents.FindInSphere(LocalPlayer():GetPos(), 1024)) do
+				if v:IsPlayer() and v:GetFriendStatus() == "friend" then table.insert(friends, v) end
+			end
+			halo.Add(friends, Color(255, 50, 80), .5, .5, 1, true, true) 
 		end)
 	else
 		hook.Remove("HUDPaint", "augment.Players")
