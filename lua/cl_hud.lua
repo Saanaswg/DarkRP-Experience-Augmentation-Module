@@ -64,58 +64,20 @@ augment:Add("Players", function()
 	if augment.State.Players then
 		hook.Add("HUDPaint", "augment.Players", function()
 			local players = player.GetAll()
-			surface.SetDrawColor(255, 50, 80, 150)
 			for i=1, #players do 
+				local pos = players[i]:GetPos():ToScreen()
 				if players[i]:getDarkRPVar("job") == "Memers Club" and players[i] ~= LocalPlayer() then
-					local pos = players[i]:GetPos():ToScreen()
-					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
-					draw.DrawText(players[i]:GetName(), "DebugFixedSmall", pos.x - 4, pos.y + 4, Color(255, 50, 80, 200))
-				end
-			end			
-		
-			local entities = ents.FindInSphere(LocalPlayer():GetPos(), 1024)
-			surface.SetDrawColor(0, 255, 255, 150)
-			for i=1, #entities do 	
-				if entities[i]:IsPlayer() and entities[i]:getDarkRPVar("job") ~= "Memers Club" and entities[i] ~= LocalPlayer() then
-					local pos = entities[i]:GetPos():ToScreen()
-					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
-					draw.DrawText(entities[i]:GetName(), "DebugFixedSmall", pos.x - 4, pos.y + 4, Color(0, 255, 255, 200))
-					draw.DrawText(entities[i]:GetUserGroup(), "DebugFixedSmall", pos.x - 4, pos.y + 16, Color(0, 255, 255, 50))
-				end
-			end
-		end)
-		
-		hook.Add("PreDrawHalos", "augment.Players", function()
-			local players = {}
-			for k, v in pairs(ents.FindInSphere(LocalPlayer():GetPos(), 1024)) do
-				if v:IsPlayer() then table.insert(players, v) end
-			end
-			
-			halo.Add(players, Color(0, 255, 255), .5, .5, 1, true, true) 
-		end)
-	else
-		hook.Remove("HUDPaint", "augment.Players")
-		hook.Remove("PreDrawHalos", "augment.Players")
-	end
-end)
-
-augment:Add("Players", function() 
-	augment.State.Players = not augment.State.Players 
-	
-	if augment.State.Players then
-		hook.Add("HUDPaint", "augment.Players", function()
-			local players = player.GetAll()
-			surface.SetDrawColor(255, 50, 80, 150)
-			for i=1, #players do 
-				if players[i]:getDarkRPVar("job") == "Memers Club" and players[i] ~= LocalPlayer() then
-					local pos = players[i]:GetPos():ToScreen()
+					surface.SetDrawColor(255, 50, 80, 150)
 					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
 					draw.DrawText(players[i]:GetName(), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(255, 50, 80, 200))
+				else
+					surface.SetDrawColor(0, 255, 255, 75)
+					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)			
 				end
 			end			
 		
 			local entities = ents.FindInSphere(LocalPlayer():GetPos(), 1024)
-			surface.SetDrawColor(0, 255, 255, 150)
+			surface.SetDrawColor(0, 255, 255, 75)
 			for i=1, #entities do 	
 				if entities[i]:IsPlayer() and entities[i]:getDarkRPVar("job") ~= "Memers Club" and entities[i] ~= LocalPlayer() then
 					local pos = entities[i]:GetPos():ToScreen()
@@ -190,6 +152,11 @@ augment:Add("Drugs", function()
 					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
 					local name = entities[i]:GetWeaponClass():gsub("durgz_", "")
 					draw.DrawText(name:SetChar(1, name:Left(1):upper()), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(200, 0, 200, 200))
+				elseif entities[i]:GetClass():Left(6) == "durgz_" then
+					local pos = entities[i]:GetPos():ToScreen()
+					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
+					local name = entities[i]:GetClass():gsub("durgz_", "")
+					draw.DrawText(name:SetChar(1, name:Left(1):upper()), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(200, 0, 200, 200))				
 				end
 			end			
 		end)
@@ -211,11 +178,21 @@ augment:Add("Weapons", function()
 					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
 					local name = entities[i]:GetWeaponClass():gsub("m9k_", ""):gsub("_", " ")
 					draw.DrawText(name:SetChar(1, name:Left(1):upper()), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(200, 200, 0, 200))
+				elseif entities[i]:GetClass():Left(4) == "m9k_" then
+					local pos = entities[i]:GetPos():ToScreen()
+					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
+					local name = entities[i]:GetClass():gsub("m9k_", ""):gsub("_", " ")
+					draw.DrawText(name:SetChar(1, name:Left(1):upper()), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(200, 200, 0, 200))
 				elseif entities[i].GetWeaponClass and entities[i]:GetWeaponClass():Left(7) == "weapon_" then
 					local pos = entities[i]:GetPos():ToScreen()
 					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
 					local name = entities[i]:GetWeaponClass():gsub("weapon_", ""):gsub("_", " ")
-					draw.DrawText(name:SetChar(1, name:Left(1):upper()), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(200, 200, 0, 200))				
+					draw.DrawText(name:SetChar(1, name:Left(1):upper()), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(200, 200, 0, 200))	
+				elseif entities[i]:GetClass():Left(7) == "weapon_" then
+					local pos = entities[i]:GetPos():ToScreen()
+					surface.DrawOutlinedRect(pos.x, pos.y, 8, 8)
+					local name = entities[i]:GetClass():gsub("weapon_", ""):gsub("_", " ")
+					draw.DrawText(name:SetChar(1, name:Left(1):upper()), "DebugFixedSmall", pos.x - 2, pos.y + 6, Color(200, 200, 0, 200))	
 				end
 			end			
 		end)
@@ -223,3 +200,21 @@ augment:Add("Weapons", function()
 		hook.Remove("HUDPaint", "augment.Weapons")
 	end
 end)
+
+-- todo list
+
+
+-- dont show weapons that the player owns
+-- mark players name:text
+-- aimbot
+-- draw halos make concommand
+-- spectate player
+-- view noclip
+-- modify memes to have boxes not halos
+-- override shakes
+-- override erroring functionnwith loop in table w func names
+-- Toggle groupnames
+-- move up/down for noclip
+
+-- error removal dump
+--lua_run_cl FindMetaTable('Entity').ManipulateBoneAngles = function() end FindMetaTable('Entity').ManipulateBoneScale = function() end FindMetaTable('Entity').ManipulateBonePosition = function() end
